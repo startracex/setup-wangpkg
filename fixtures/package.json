@@ -1,0 +1,10 @@
+{
+  "name": "setup-wangpkg-fixture",
+  "private": true,
+  "devEngines": {
+    "packageManager": {
+      "name": "wangpkg",
+      "version": "0.1.0"
+    }
+  }
+}

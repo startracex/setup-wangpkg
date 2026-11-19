@@ -1,0 +1,44 @@
+name: Setup wangpkg
+description: Install wangpkg and add it to PATH
+author: startracex
+
+branding:
+  icon: package
+  color: blue
+
+inputs:
+  version:
+    description: >
+      wangpkg version to install. Accepts an exact semver, a semver range, or
+      a dist-tag. When omitted, infers from the manifest, otherwise uses the
+      "latest" dist-tag.
+    required: false
+    default: ""
+  manifest:
+    description: >
+      Path to the package manifest used to infer the version from
+      packageManager or devEngines.packageManager. Relative to the job
+      working directory.
+    required: false
+    default: package.json
+
+outputs:
+  version:
+    description: Installed wangpkg version
+    value: ${{ steps.install.outputs.version }}
+  path:
+    description: Directory containing the wangpkg binary
+    value: ${{ steps.install.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - id: install
+      name: Install wangpkg
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_MANIFEST: ${{ inputs.manifest }}
+        RUNNER_OS: ${{ runner.os }}
+        RUNNER_ARCH: ${{ runner.arch }}
+      run: bash "$GITHUB_ACTION_PATH/install.sh"
