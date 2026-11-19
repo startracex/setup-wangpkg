@@ -107,12 +107,40 @@ if [[ -z "$tarball" ]]; then
   exit 1
 fi
 
-install_dir="${RUNNER_TEMP}/wangpkg-${version}-${os}-${arch}"
+to_posix_path() {
+  local p="$1"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -u "$p"
+    return
+  fi
+  p="${p//\\//}"
+  if [[ "$p" =~ ^([A-Za-z]):/(.*)$ ]]; then
+    local drive="${BASH_REMATCH[1]}"
+    drive=$(printf '%s' "$drive" | tr '[:upper:]' '[:lower:]')
+    printf '/%s/%s\n' "$drive" "${BASH_REMATCH[2]}"
+  else
+    printf '%s\n' "$p"
+  fi
+}
+
+to_github_path() {
+  local p="$1"
+  if [[ "$os" == "win32" ]] && command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$p"
+  else
+    printf '%s\n' "$p"
+  fi
+}
+
+install_dir="$(to_posix_path "${RUNNER_TEMP}")/wangpkg-${version}-${os}-${arch}"
 rm -rf "$install_dir"
 mkdir -p "$install_dir"
 archive="${install_dir}/package.tgz"
 curl -fsSL -o "$archive" "$tarball"
-tar -xzf "$archive" -C "$install_dir"
+(
+  cd "$install_dir"
+  tar -xzf package.tgz
+)
 
 bin_dir="${install_dir}/bin"
 mkdir -p "$bin_dir"
@@ -138,10 +166,11 @@ else
   wangpkg_bin="${bin_dir}/wangpkg"
 fi
 
-echo "${bin_dir}" >> "$GITHUB_PATH"
+github_bin_dir=$(to_github_path "$bin_dir")
+echo "${github_bin_dir}" >> "$GITHUB_PATH"
 {
   echo "version=${version}"
-  echo "path=${bin_dir}"
+  echo "path=${github_bin_dir}"
 } >> "$GITHUB_OUTPUT"
 
 echo "Installed wangpkg ${version} (${pkg})"
